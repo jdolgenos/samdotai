@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Box Agent Chat - Login</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: #0061d5;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        .btn-login {
+            background: #0061d5;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .btn-login:hover {
+            background: #004bb5;
+        }
+        .features {
+            margin-top: 30px;
+            text-align: left;
+            color: #666;
+            font-size: 14px;
+        }
+        .features ul {
+            padding-left: 20px;
+        }
+        .features li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">🤖</div>
+        <h1>Box Agent Chat</h1>
+        <p class="subtitle">Intelligent Box operations through natural conversation</p>
+        
+        <a href="#" class="btn-login" onclick="startOAuth()">
+            Sign in with Box
+        </a>
+        
+        <div class="features">
+            <h3>Features:</h3>
+            <ul>
+                <li>Chat with AI agents about Box operations</li>
+                <li>Execute Box API actions through conversation</li>
+                <li>Secure OAuth authentication</li>
+                <li>Multi-purpose endpoint for various operations</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function startOAuth() {
+            const authUrl = `https://account.box.com/api/oauth2/authorize?response_type=code&client_id={{ client_id }}&redirect_uri=${encodeURIComponent('{{ redirect_uri }}')}`;
+            window.location.href = authUrl;
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Box Agent Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: white;
+            padding: 15px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #0061d5;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-center {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .agent-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .agent-selector label {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .agent-dropdown {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 14px;
+            min-width: 200px;
+            cursor: pointer;
+        }
+
+        .agent-dropdown:focus {
+            outline: none;
+            border-color: #0061d5;
+        }
+        
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .logout-btn:hover {
+            background: #c82333;
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+            background: white;
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #fafafa;
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message.user {
+            justify-content: flex-end;
+        }
+        
+        .message.agent {
+            justify-content: flex-start;
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+        
+        .message.user .message-content {
+            background: #0061d5;
+            color: white;
+        }
+        
+        .message.agent .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .message.user .message-avatar {
+            background: #0061d5;
+            color: white;
+        }
+        
+        .message.agent .message-avatar {
+            background: #28a745;
+            color: white;
+        }
+        
+        .action-panel {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .action-header {
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .action-list {
+            background: #f8f9fa;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        
+        .execute-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .execute-btn:hover {
+            background: #218838;
+        }
+        
+        .execute-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .results-panel {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .results-header {
+            font-weight: bold;
+            color: #0c5460;
+            margin-bottom: 10px;
+        }
+        
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .chat-input:focus {
+            border-color: #0061d5;
+        }
+        
+        .send-btn {
+            background: #0061d5;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            min-width: 80px;
+        }
+        
+        .send-btn:hover {
+            background: #004bb5;
+        }
+        
+        .send-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            font-style: italic;
+            padding: 10px;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .typing-dots span {
+            width: 4px;
+            height: 4px;
+            background: #666;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+        
+        .welcome-message {
+            text-align: center;
+            color: #666;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+
+        .loading-agents {
+            color: #999;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 Box Agent Chat</h1>
+        <div class="header-center">
+            <div class="agent-selector">
+                <label for="agentSelect">AI Agent:</label>
+                <select id="agentSelect" class="agent-dropdown">
+                    <option value="" class="loading-agents">Loading agents...</option>
+                </select>
+            </div>
+        </div>
+        <a href="/logout" class="logout-btn">Logout</a>
+    </div>
+    
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                Welcome to Box Agent Chat! Select an AI agent above and ask me anything about Box operations.
+                <br><br>
+                Examples:
+                <br>• "Create a new folder called 'Project Files'"
+                <br>• "Copy file ID 123456 to folder ID 789"
+                <br>• "Generate a document using template ID 456"
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="message-avatar">🤖</div>
+            <span>Agent is thinking</span>
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+        
+        <div class="chat-input-container">
+            <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..." autocomplete="off">
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        let conversationHistory = [];
+        let availableAgents = [];
+        let selectedAgentId = null;
+        
+        // Load available AI agents on page load
+        async function loadAIAgents() {
+            try {
+                const response = await fetch('/api/ai-agents');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    availableAgents = data.agents;
+                    populateAgentDropdown();
+                } else {
+                    console.error('Failed to load AI agents:', data.error);
+                    showAgentLoadError();
+                }
+            } catch (error) {
+                console.error('Error loading AI agents:', error);
+                showAgentLoadError();
+            }
+        }
+        
+        function populateAgentDropdown() {
+            const agentSelect = document.getElementById('agentSelect');
+            agentSelect.innerHTML = '';
+            
+            if (availableAgents.length === 0) {
+                agentSelect.innerHTML = '<option value="">No agents available</option>';
+                return;
+            }
+            
+            availableAgents.forEach((agent, index) => {
+                const option = document.createElement('option');
+                option.value = agent.id;
+                option.textContent = agent.name;
+                option.title = agent.description; // Show description on hover
+                agentSelect.appendChild(option);
+                
+                // Set first agent as default
+                if (index === 0) {
+                    selectedAgentId = agent.id;
+                    option.selected = true;
+                }
+            });
+            
+            // Add event listener for agent selection changes
+            agentSelect.addEventListener('change', function() {
+                selectedAgentId = this.value;
+                console.log('Selected agent:', selectedAgentId);
+            });
+        }
+        
+        function showAgentLoadError() {
+            const agentSelect = document.getElementById('agentSelect');
+            agentSelect.innerHTML = '<option value="">Error loading agents</option>';
+        }
+        
+        document.getElementById('chatInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        function formatActionSummary(action) {
+            const resource = action.resource || 'unknown';
+            const actionType = action.action || 'unknown';
+            return `${resource}: ${actionType}`;
+        }
+        
+        function formatResultSummary(result) {
+            const resource = result.resource || 'unknown';
+            const actionType = result.action || 'unknown';
+            const status = result.api_response && !result.api_response.error ? 'completed' : 'failed';
+            return `${resource}: ${actionType} - ${status}`;
+        }
+        
+        function addMessage(content, isUser = false, messageData = null) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'agent'}`;
+            
+            let actionsHtml = '';
+            let resultsHtml = '';
+            
+            if (messageData && messageData.has_actions && messageData.action_plan) {
+                const actionSummaries = messageData.action_plan.map(formatActionSummary);
+                actionsHtml = `
+                    <div class="action-panel">
+                        <div class="action-header">
+                            ⚡ Actions Found
+                        </div>
+                        <div class="action-list">
+                            ${actionSummaries.join('\n')}
+                        </div>
+                        <button class="execute-btn" onclick="executeActions(${JSON.stringify(messageData.action_plan).replace(/"/g, '&quot;')})">
+                            Execute Actions
+                        </button>
+                    </div>
+                `;
+            }
+            
+            if (messageData && messageData.results) {
+                const resultSummaries = messageData.results.map(formatResultSummary);
+                resultsHtml = `
+                    <div class="results-panel">
+                        <div class="results-header">
+                            ✅ Execution Results
+                        </div>
+                        <div class="action-list">
+                            ${resultSummaries.join('\n')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${isUser ? '👤' : '🤖'}</div>
+                <div class="message-content">
+                    ${content}
+                    ${actionsHtml}
+                    ${resultsHtml}
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function showTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'flex';
+            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+        }
+        
+        function hideTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            if (!selectedAgentId) {
+                addMessage('Please select an AI agent first.', false);
+                return;
+            }
+            
+            // Disable input
+            input.disabled = true;
+            sendBtn.disabled = true;
+            
+            // Add user message
+            addMessage(message, true);
+            
+            // Clear input
+            input.value = '';
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        history: conversationHistory,
+                        agent_id: selectedAgentId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Add agent response
+                    addMessage(data.message, false, data);
+                    
+                    // Update conversation history
+                    conversationHistory.push({
+                        prompt: message,
+                        answer: data.message,
+                        created_at: data.created_at
+                    });
+                } else {
+                    addMessage(`Error: ${data.error}`, false);
+                }
+                
+            } catch (error) {
+                addMessage(`Error: ${error.message}`, false);
+            } finally {
+                hideTypingIndicator();
+                input.disabled = false;
+                sendBtn.disabled = false;
+                input.focus();
+            }
+        }
+        
+        async function executeActions(actions) {
+            try {
+                const response = await fetch('/api/execute-actions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        actions: actions,
+                        agent_id: selectedAgentId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addMessage("Actions executed successfully!", false, { results: data.results });
+                    
+                    // If we have a follow-up message from the agent, add it to the conversation
+                    if (data.agent_response) {
+                        // Update conversation history with the action results first
+                        conversationHistory.push({
+                            prompt: "Actions executed",
+                            answer: JSON.stringify(data.results),
+                            created_at: new Date().toISOString()
+                        });
+                        
+                        // Add the agent's follow-up response
+                        addMessage(data.agent_response.message, false);
+                        
+                        // Update conversation history with agent response
+                        conversationHistory.push({
+                            prompt: "Action execution summary",
+                            answer: data.agent_response.message,
+                            created_at: data.agent_response.created_at || new Date().toISOString()
+                        });
+                    }
+                } else {
+                    addMessage(`Error executing actions: ${data.error}`, false);
+                }
+                
+            } catch (error) {
+                addMessage(`Error: ${error.message}`, false);
+            }
+        }
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAIAgents();
+            document.getElementById('chatInput').focus();
+        });
+    </script>
+</body>
+</html> 

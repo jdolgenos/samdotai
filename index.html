@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Box Template Selection</title>
+
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Latest version of the Box Picker CSS -->
+    <link rel="stylesheet" href="https://cdn01.boxcdn.net/platform/elements/21.0.0/en-US/preview.css">
+    <link rel="stylesheet" href="https://cdn01.boxcdn.net/platform/elements/21.0.0/en-US/picker.css">
+</head>
+<body>
+    <h1>Doc-Genie - abracadocx</h1>
+    
+    <div id="instructionsBox" class="instructions hidden">
+        <!-- Instructions will be updated dynamically -->
+    </div>
+
+    <!-- Box File Picker -->
+    <div id="filePickerContainer">
+    </div>
+
+    <!-- Application Content -->
+    <div id="appContent">
+        <div class="metadata-section">
+            <button id="downloadCsvButton" class="non-picker-button">Download CSV</button>
+            <div class="toggle-container">
+                <!-- The checkbox is visible but its default appearance is removed -->
+                <input type="checkbox" id="autogenerateRowsCheckbox">
+                <!-- This label will serve as the visual toggle -->
+                <label for="autogenerateRowsCheckbox" class="toggle-switch"></label>
+                <!-- Descriptive text displayed to the right of the toggle -->
+                <span class="toggle-label">Autogenerate rows using Box AI - WARNING, CHECK CSV FOR ISSUES BEFORE USING, AI IS UNPREDICTABLE</span>
+              </div>
+
+            <button id="uploadCsvButton" class="non-picker-button">Upload CSV</button>
+            <div id="tableContainer"></div>
+            <div id="loadingSpinner" class="spinner"></div>
+        </div>
+        <div class="preview-container"></div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="./lib/bundle.js"></script>
+    <script src="https://cdn01.boxcdn.net/platform/elements/21.0.0/en-US/preview.js"></script>
+    <script src="https://cdn01.boxcdn.net/platform/elements/21.0.0/en-US/picker.js"></script>
+    <script src="scripts.js"></script>
+</body>
+</html>

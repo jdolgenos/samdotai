@@ -3,50 +3,810 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Box Template Selection</title>
+    <title>Box Agent Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: white;
+            padding: 15px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #0061d5;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-    <link rel="stylesheet" href="styles.css">
+        .header-center {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
 
-    <!-- Latest version of the Box Picker CSS -->
-    <link rel="stylesheet" href="https://cdn01.boxcdn.net/platform/elements/21.0.0/en-US/preview.css">
-    <link rel="stylesheet" href="https://cdn01.boxcdn.net/platform/elements/21.0.0/en-US/picker.css">
+        .agent-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .agent-selector label {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .agent-dropdown {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 14px;
+            min-width: 200px;
+            cursor: pointer;
+        }
+
+        .agent-dropdown:focus {
+            outline: none;
+            border-color: #0061d5;
+        }
+        
+        .logout-btn, .login-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .login-btn {
+            background: #0061d5;
+        }
+        
+        .logout-btn:hover {
+            background: #c82333;
+        }
+
+        .login-btn:hover {
+            background: #004bb5;
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+            background: white;
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #fafafa;
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message.user {
+            justify-content: flex-end;
+        }
+        
+        .message.agent {
+            justify-content: flex-start;
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+        
+        .message.user .message-content {
+            background: #0061d5;
+            color: white;
+        }
+        
+        .message.agent .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .message.user .message-avatar {
+            background: #0061d5;
+            color: white;
+        }
+        
+        .message.agent .message-avatar {
+            background: #28a745;
+            color: white;
+        }
+        
+        .action-panel {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .action-header {
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .action-list {
+            background: #f8f9fa;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            white-space: pre-line;
+        }
+        
+        .execute-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .execute-btn:hover {
+            background: #218838;
+        }
+        
+        .execute-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .results-panel {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .results-header {
+            font-weight: bold;
+            color: #0c5460;
+            margin-bottom: 10px;
+        }
+        
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .chat-input:focus {
+            border-color: #0061d5;
+        }
+        
+        .send-btn {
+            background: #0061d5;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            min-width: 80px;
+        }
+        
+        .send-btn:hover {
+            background: #004bb5;
+        }
+        
+        .send-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            font-style: italic;
+            padding: 10px;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .typing-dots span {
+            width: 4px;
+            height: 4px;
+            background: #666;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+        
+        .welcome-message {
+            text-align: center;
+            color: #666;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+
+        .loading-agents {
+            color: #999;
+            font-style: italic;
+        }
+
+        .oauth-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .oauth-container h2 {
+            margin-bottom: 20px;
+            color: #0061d5;
+        }
+
+        .oauth-container p {
+            margin-bottom: 30px;
+            color: #666;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
 </head>
 <body>
-    <h1>Doc-Genie - abracadocx</h1>
-    
-    <div id="instructionsBox" class="instructions hidden">
-        <!-- Instructions will be updated dynamically -->
-    </div>
-
-    <!-- Box File Picker -->
-    <div id="filePickerContainer">
-    </div>
-
-    <!-- Application Content -->
-    <div id="appContent">
-        <div class="metadata-section">
-            <button id="downloadCsvButton" class="non-picker-button">Download CSV</button>
-            <div class="toggle-container">
-                <!-- The checkbox is visible but its default appearance is removed -->
-                <input type="checkbox" id="autogenerateRowsCheckbox">
-                <!-- This label will serve as the visual toggle -->
-                <label for="autogenerateRowsCheckbox" class="toggle-switch"></label>
-                <!-- Descriptive text displayed to the right of the toggle -->
-                <span class="toggle-label">Autogenerate rows using Box AI - WARNING, CHECK CSV FOR ISSUES BEFORE USING, AI IS UNPREDICTABLE</span>
-              </div>
-
-            <button id="uploadCsvButton" class="non-picker-button">Upload CSV</button>
-            <div id="tableContainer"></div>
-            <div id="loadingSpinner" class="spinner"></div>
+    <!-- OAuth Screen -->
+    <div id="oauthScreen" class="hidden">
+        <div class="header">
+            <h1>🤖 Box Agent Chat</h1>
+            <div></div>
         </div>
-        <div class="preview-container"></div>
+        <div class="oauth-container">
+            <h2>Welcome to Box Agent Chat</h2>
+            <p>Please authenticate with Box to access your AI agents and start chatting.</p>
+            <button id="loginBtn" class="login-btn">Login with Box</button>
+        </div>
     </div>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="./lib/bundle.js"></script>
-    <script src="https://cdn01.boxcdn.net/platform/elements/21.0.0/en-US/preview.js"></script>
-    <script src="https://cdn01.boxcdn.net/platform/elements/21.0.0/en-US/picker.js"></script>
-    <script src="scripts.js"></script>
+    <!-- Main Chat Application -->
+    <div id="chatApp" class="hidden">
+        <div class="header">
+            <h1>🤖 Box Agent Chat</h1>
+            <div class="header-center">
+                <div class="agent-selector">
+                    <label for="agentSelect">AI Agent:</label>
+                    <select id="agentSelect" class="agent-dropdown">
+                        <option value="" class="loading-agents">Loading agents...</option>
+                    </select>
+                </div>
+            </div>
+            <button id="logoutBtn" class="logout-btn">Logout</button>
+        </div>
+        
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <div class="welcome-message">
+                    Welcome to Box Agent Chat! Select an AI agent above and ask me anything about Box operations.
+                    <br><br>
+                    Examples:
+                    <br>• "Create a new folder called 'Project Files'"
+                    <br>• "Copy file ID 123456 to folder ID 789"
+                    <br>• "Generate a document using template ID 456"
+                </div>
+            </div>
+            
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="message-avatar">🤖</div>
+                <span>Agent is thinking</span>
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+            
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..." autocomplete="off">
+                <button class="send-btn" id="sendBtn">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const BOX_CLIENT_ID = "k5nioqr05lsa3z2l2ba0wy3q2yg97pc2";
+        const REDIRECT_URI = window.location.origin + window.location.pathname;
+        
+        // Global variables
+        let conversationHistory = [];
+        let availableAgents = [];
+        let selectedAgentId = null;
+        let accessToken = null;
+        let refreshToken = null;
+
+        // Utility functions
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        function saveTokens(access, refresh) {
+            accessToken = access;
+            refreshToken = refresh;
+            sessionStorage.setItem("access_token", access);
+            sessionStorage.setItem("refresh_token", refresh);
+        }
+
+        function getTokens() {
+            accessToken = sessionStorage.getItem("access_token");
+            refreshToken = sessionStorage.getItem("refresh_token");
+            return { accessToken, refreshToken };
+        }
+
+        function clearTokens() {
+            accessToken = null;
+            refreshToken = null;
+            sessionStorage.removeItem("access_token");
+            sessionStorage.removeItem("refresh_token");
+        }
+
+        // OAuth functions
+        async function handleOAuthRedirect() {
+            const code = getUrlParameter('code');
+            if (code) {
+                try {
+                    console.log('OAuth code detected. Exchanging for tokens...');
+                    const tokenResponse = await getAccessToken(code);
+                    saveTokens(tokenResponse.access_token, tokenResponse.refresh_token);
+                    console.log('Tokens saved successfully.');
+                    
+                    // Remove the code from URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    return true;
+                } catch (error) {
+                    console.error('Failed to handle OAuth redirect:', error);
+                    alert('An error occurred during authentication. Please try again.');
+                }
+            }
+            return false;
+        }
+
+        async function getAccessToken(code) {
+            const response = await fetch("https://api.box.com/oauth2/token", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({
+                    grant_type: "authorization_code",
+                    code: code,
+                    client_id: BOX_CLIENT_ID,
+                    redirect_uri: REDIRECT_URI,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Failed to get access token: ${response.statusText}`);
+            }
+
+            return await response.json();
+        }
+
+        async function refreshAccessToken() {
+            if (!refreshToken) return null;
+            
+            try {
+                const response = await fetch("https://api.box.com/oauth2/token", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams({
+                        grant_type: "refresh_token",
+                        refresh_token: refreshToken,
+                        client_id: BOX_CLIENT_ID,
+                    }),
+                });
+
+                if (response.ok) {
+                    const tokens = await response.json();
+                    saveTokens(tokens.access_token, tokens.refresh_token);
+                    return tokens.access_token;
+                }
+            } catch (error) {
+                console.error('Failed to refresh token:', error);
+            }
+            return null;
+        }
+
+        async function validateToken() {
+            if (!accessToken) return false;
+            
+            try {
+                const response = await fetch('https://api.box.com/2.0/users/me', {
+                    headers: { Authorization: `Bearer ${accessToken}` },
+                });
+                
+                if (response.ok) {
+                    return true;
+                } else if (response.status === 401) {
+                    // Try to refresh
+                    const newToken = await refreshAccessToken();
+                    return !!newToken;
+                }
+            } catch (error) {
+                console.error('Token validation failed:', error);
+            }
+            return false;
+        }
+
+        function initiateOAuth() {
+            const authUrl = `https://account.box.com/api/oauth2/authorize?response_type=code&client_id=${BOX_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+            window.location.href = authUrl;
+        }
+
+        // AI Agents functions
+        async function loadAIAgents() {
+            try {
+                const response = await fetch("https://api.box.com/2.0/ai_agents?mode=text_gen", {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    availableAgents = data.entries.filter(agent => 
+                        agent.access_state === 'enabled'
+                    ).map(agent => ({
+                        id: agent.id,
+                        name: agent.name,
+                        description: agent.description || '',
+                        icon_reference: agent.icon_reference || ''
+                    }));
+                    
+                    populateAgentDropdown();
+                } else {
+                    console.error('Failed to load AI agents');
+                    showAgentLoadError();
+                }
+            } catch (error) {
+                console.error('Error loading AI agents:', error);
+                showAgentLoadError();
+            }
+        }
+
+        function populateAgentDropdown() {
+            const agentSelect = document.getElementById('agentSelect');
+            agentSelect.innerHTML = '';
+            
+            if (availableAgents.length === 0) {
+                agentSelect.innerHTML = '<option value="">No agents available</option>';
+                return;
+            }
+            
+            availableAgents.forEach((agent, index) => {
+                const option = document.createElement('option');
+                option.value = agent.id;
+                option.textContent = agent.name;
+                option.title = agent.description;
+                agentSelect.appendChild(option);
+                
+                if (index === 0) {
+                    selectedAgentId = agent.id;
+                    option.selected = true;
+                }
+            });
+            
+            agentSelect.addEventListener('change', function() {
+                selectedAgentId = this.value;
+            });
+        }
+
+        function showAgentLoadError() {
+            const agentSelect = document.getElementById('agentSelect');
+            agentSelect.innerHTML = '<option value="">Error loading agents</option>';
+        }
+
+        // Chat functions
+        function formatActionSummary(action) {
+            const resource = action.resource || 'unknown';
+            const actionType = action.action || 'unknown';
+            return `${resource}: ${actionType}`;
+        }
+        
+        function formatResultSummary(result) {
+            const resource = result.resource || 'unknown';
+            const actionType = result.action || 'unknown';
+            const status = result.api_response && !result.api_response.error ? 'completed' : 'failed';
+            return `${resource}: ${actionType} - ${status}`;
+        }
+
+        function addMessage(content, isUser = false, messageData = null) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'agent'}`;
+            
+            let actionsHtml = '';
+            let resultsHtml = '';
+            
+            if (messageData && messageData.has_actions && messageData.action_plan) {
+                const actionSummaries = messageData.action_plan.map(formatActionSummary);
+                actionsHtml = `
+                    <div class="action-panel">
+                        <div class="action-header">⚡ Actions Found</div>
+                        <div class="action-list">${actionSummaries.join('\n')}</div>
+                        <button class="execute-btn" onclick="executeActions(${JSON.stringify(messageData.action_plan).replace(/"/g, '&quot;')})">
+                            Execute Actions
+                        </button>
+                    </div>
+                `;
+            }
+            
+            if (messageData && messageData.results) {
+                const resultSummaries = messageData.results.map(formatResultSummary);
+                resultsHtml = `
+                    <div class="results-panel">
+                        <div class="results-header">✅ Execution Results</div>
+                        <div class="action-list">${resultSummaries.join('\n')}</div>
+                    </div>
+                `;
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${isUser ? '👤' : '🤖'}</div>
+                <div class="message-content">
+                    ${content}
+                    ${actionsHtml}
+                    ${resultsHtml}
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'flex';
+            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+        }
+        
+        function hideTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            if (!selectedAgentId) {
+                addMessage('Please select an AI agent first.', false);
+                return;
+            }
+            
+            input.disabled = true;
+            sendBtn.disabled = true;
+            
+            addMessage(message, true);
+            input.value = '';
+            showTypingIndicator();
+            
+            try {
+                const response = await fetch("https://api.box.com/2.0/ai/text_gen", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify({
+                        prompt: message,
+                        items: [{"type": "file", "id": "1897961991698", "content": ""}],
+                        dialogue_history: conversationHistory,
+                        ai_agent: {"type": "ai_agent_id", "id": selectedAgentId}
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const hasActions = data.answer.includes('<action>');
+                    
+                    let messageData = {
+                        message: data.answer,
+                        created_at: data.created_at || new Date().toISOString(),
+                        has_actions: hasActions
+                    };
+                    
+                    if (hasActions) {
+                        messageData.action_plan = extractActions(data.answer);
+                    }
+                    
+                    addMessage(data.answer, false, messageData);
+                    
+                    conversationHistory.push({
+                        prompt: message,
+                        answer: data.answer,
+                        created_at: messageData.created_at
+                    });
+                } else {
+                    addMessage(`Error: ${response.statusText}`, false);
+                }
+                
+            } catch (error) {
+                addMessage(`Error: ${error.message}`, false);
+            } finally {
+                hideTypingIndicator();
+                input.disabled = false;
+                sendBtn.disabled = false;
+                input.focus();
+            }
+        }
+
+        function extractActions(text) {
+            const blocks = text.match(/<action>(.*?)<\/action>/gs);
+            if (!blocks) return [];
+            
+            const actions = [];
+            blocks.forEach(block => {
+                try {
+                    const jsonStr = block.replace(/<\/?action>/g, '').trim();
+                    const parsed = JSON.parse(jsonStr);
+                    if (Array.isArray(parsed)) {
+                        actions.push(...parsed);
+                    } else {
+                        actions.push(parsed);
+                    }
+                } catch (e) {
+                    console.error('Failed to parse action:', e);
+                }
+            });
+            return actions;
+        }
+
+        async function executeActions(actions) {
+            // This would need to be implemented based on your specific action types
+            console.log('Execute actions:', actions);
+            addMessage("Action execution not yet implemented in client-side version.", false);
+        }
+
+        // UI functions
+        function showChatApp() {
+            document.getElementById('oauthScreen').classList.add('hidden');
+            document.getElementById('chatApp').classList.remove('hidden');
+        }
+
+        function showOAuthScreen() {
+            document.getElementById('chatApp').classList.add('hidden');
+            document.getElementById('oauthScreen').classList.remove('hidden');
+        }
+
+        function logout() {
+            clearTokens();
+            conversationHistory = [];
+            availableAgents = [];
+            selectedAgentId = null;
+            showOAuthScreen();
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check for OAuth callback
+            const codeProcessed = await handleOAuthRedirect();
+            
+            if (!codeProcessed) {
+                getTokens();
+            }
+            
+            // Check if we have valid tokens
+            if (accessToken && await validateToken()) {
+                showChatApp();
+                await loadAIAgents();
+            } else {
+                showOAuthScreen();
+            }
+            
+            // Set up event listeners
+            document.getElementById('loginBtn').addEventListener('click', initiateOAuth);
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
+            document.getElementById('chatInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        });
+    </script>
 </body>
 </html>

@@ -798,7 +798,7 @@
                     },
                     body: JSON.stringify({
                         prompt: message,
-                        items: [],
+                        items: [{"type": "folder", "id": "0"}],
                         dialogue_history: conversationHistory,
                         ai_agent: {"type": "ai_agent_id", "id": selectedAgentId}
                     })
@@ -1041,7 +1041,7 @@
                     },
                     body: JSON.stringify({
                         prompt: handoffMessage,
-                        items: [],
+                        items: [{"type": "folder", "id": "0"}],
                         dialogue_history: conversationHistory,
                         ai_agent: {"type": "ai_agent_id", "id": newAgentId}
                     })
@@ -1185,7 +1185,7 @@
                             },
                             body: JSON.stringify({
                                 prompt: `The following actions have been executed:\n\n${actionSummary}\n\nPlease provide a brief summary of what was accomplished.`,
-                                items: [],
+                                items: [{"type": "folder", "id": "0"}],
                                 dialogue_history: [],
                                 ai_agent: {"type": "ai_agent_id", "id": selectedAgentId}
                             })

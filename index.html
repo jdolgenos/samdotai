@@ -265,17 +265,9 @@
             border: 1px solid #e8e9eb;
             color: #2f3942;
             font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .agent-switch-icon {
-            font-size: 16px;
-        }
-
-        .agent-switch-text {
-            font-weight: 500;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .message-text {
@@ -983,8 +975,8 @@
         function formatAgentSwitchSummary(agentId) {
             const agentSelect = document.getElementById('agentSelect');
             const agentOption = Array.from(agentSelect.options).find(option => option.value === agentId);
-            const agentName = agentOption ? agentOption.text : `Agent ${agentId}`;
-            return `<span class="agent-switch-icon">🔄</span> <span class="agent-switch-text">Switching to: <strong>${agentName}</strong></span>`;
+            const agentName = agentOption ? agentOption.text : `AGENT ${agentId}`;
+            return `🔄 SWITCHING TO: ${agentName.toUpperCase()}`;
         }
 
         function formatMarkdown(text) {

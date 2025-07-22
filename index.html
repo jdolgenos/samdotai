@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Box Agent Chat</title>
+    <title>ChatGuhPT</title>
     <style>
+        /* Import Box Lato font */
+        @import url('https://cdn01.boxcdn.net/fonts/1.0.17/lato/main-fonts.css');
+
         * {
             margin: 0;
             padding: 0;
@@ -12,26 +15,30 @@
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f5f5;
+            font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f7f9fa;
+            color: #2f3942;
             height: 100vh;
             display: flex;
             flex-direction: column;
+            font-size: 14px;
+            line-height: 1.4;
         }
         
         .header {
-            background: white;
-            padding: 15px 20px;
-            border-bottom: 1px solid #ddd;
+            background: #ffffff;
+            padding: 16px 24px;
+            border-bottom: 1px solid #e8e9eb;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(47, 57, 66, 0.1);
         }
         
         .header h1 {
-            color: #0061d5;
-            font-size: 20px;
+            color: #2f3942;
+            font-size: 18px;
+            font-weight: 600;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -51,34 +58,44 @@
 
         .agent-selector label {
             font-size: 14px;
-            color: #333;
+            color: #2f3942;
             font-weight: 500;
         }
 
         .agent-dropdown {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 6px 10px;
+            background: #ffffff;
+            border: 1px solid #c4c7cc;
+            border-radius: 3px;
+            padding: 8px 12px;
             font-size: 14px;
             min-width: 200px;
             cursor: pointer;
+            font-family: 'Lato', sans-serif;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
         .agent-dropdown:focus {
             outline: none;
             border-color: #0061d5;
+            box-shadow: 0 0 0 2px rgba(0, 97, 213, 0.2);
+        }
+
+        .agent-dropdown:hover {
+            border-color: #9da2a8;
         }
         
         .logout-btn, .login-btn {
-            background: #dc3545;
+            background: #767676;
             color: white;
             border: none;
             padding: 8px 16px;
-            border-radius: 4px;
+            border-radius: 3px;
             cursor: pointer;
             text-decoration: none;
             font-size: 14px;
+            font-family: 'Lato', sans-serif;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
         }
 
         .login-btn {
@@ -86,30 +103,35 @@
         }
         
         .logout-btn:hover {
-            background: #c82333;
+            background: #5a5a5a;
         }
 
         .login-btn:hover {
-            background: #004bb5;
+            background: #004fb7;
+        }
+
+        .login-btn:focus, .logout-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #b3d7ff;
         }
         
         .chat-container {
             flex: 1;
             display: flex;
             flex-direction: column;
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             width: 100%;
-            background: white;
-            border-radius: 8px 8px 0 0;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            background: #ffffff;
+            border-radius: 4px 4px 0 0;
+            box-shadow: 0 1px 3px rgba(47, 57, 66, 0.1);
         }
         
         .chat-messages {
             flex: 1;
-            padding: 20px;
+            padding: 24px;
             overflow-y: auto;
-            background: #fafafa;
+            background: #ffffff;
         }
         
         .message {
@@ -145,29 +167,30 @@
         }
         
         .message.agent .message-content {
-            background: white;
-            color: #333;
-            border: 1px solid #ddd;
+            background: #ffffff;
+            color: #2f3942;
+            border: 1px solid #e8e9eb;
+            box-shadow: 0 1px 2px rgba(47, 57, 66, 0.08);
         }
         
         .message-avatar {
             width: 32px;
             height: 32px;
-            border-radius: 50%;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
+            font-weight: 500;
             font-size: 14px;
         }
         
         .message.user .message-avatar {
-            background: #0061d5;
+            background: #767676;
             color: white;
         }
         
         .message.agent .message-avatar {
-            background: #28a745;
+            background: #0061d5;
             color: white;
         }
         
@@ -220,30 +243,39 @@
         }
         
         .agent-switch-panel {
-            background: #fff3e0;
-            border: 1px solid #ffcc80;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 10px;
+            background: #f0f6ff;
+            border: 1px solid #b3d7ff;
+            border-radius: 4px;
+            padding: 12px 16px;
+            margin-top: 12px;
         }
         
         .agent-switch-header {
-            font-weight: bold;
-            color: #f57c00;
-            margin-bottom: 10px;
+            font-weight: 600;
+            color: #0061d5;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .agent-switch-summary {
+            font-family: 'Lato', sans-serif;
+            background: #ffffff;
+            padding: 8px 12px;
+            border-radius: 3px;
+            border: 1px solid #e8e9eb;
+            color: #2f3942;
+            font-size: 14px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        
-        .agent-switch-summary {
-            font-family: monospace;
-            background: #fafafa;
-            padding: 10px;
-            border-radius: 4px;
-            border: 1px solid #eeeeee;
-            color: #f57c00;
-            font-size: 12px;
+
+        .agent-switch-icon {
+            font-size: 16px;
+        }
+
+        .agent-switch-text {
+            font-weight: 500;
         }
 
         .message-text {
@@ -416,39 +448,58 @@
         }
         
         .chat-input-container {
-            padding: 20px;
-            background: white;
-            border-top: 1px solid #ddd;
+            padding: 16px 24px;
+            background: #ffffff;
+            border-top: 1px solid #e8e9eb;
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
         
         .chat-input {
             flex: 1;
             padding: 12px 16px;
-            border: 1px solid #ddd;
-            border-radius: 25px;
+            border: 1px solid #c4c7cc;
+            border-radius: 3px;
             font-size: 14px;
+            font-family: 'Lato', sans-serif;
             outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            resize: none;
+            overflow: hidden;
+            min-height: 40px;
+            max-height: 120px;
         }
         
         .chat-input:focus {
             border-color: #0061d5;
+            box-shadow: 0 0 0 2px rgba(0, 97, 213, 0.2);
+        }
+        
+        .chat-input:hover {
+            border-color: #9da2a8;
         }
         
         .send-btn {
             background: #0061d5;
             color: white;
             border: none;
-            padding: 12px 20px;
-            border-radius: 25px;
+            padding: 12px 16px;
+            border-radius: 3px;
             cursor: pointer;
             font-size: 14px;
+            font-family: 'Lato', sans-serif;
+            font-weight: 500;
             min-width: 80px;
+            transition: background-color 0.2s ease;
         }
         
         .send-btn:hover {
-            background: #004bb5;
+            background: #004fb7;
+        }
+        
+        .send-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #b3d7ff;
         }
         
         .send-btn:disabled {
@@ -512,18 +563,28 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 40px;
+            padding: 48px;
             text-align: center;
+            background: #ffffff;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(47, 57, 66, 0.1);
+            max-width: 420px;
+            margin: auto;
+            border: 1px solid #e8e9eb;
         }
 
         .oauth-container h2 {
-            margin-bottom: 20px;
-            color: #0061d5;
+            margin-bottom: 16px;
+            color: #2f3942;
+            font-size: 20px;
+            font-weight: 600;
         }
 
         .oauth-container p {
-            margin-bottom: 30px;
-            color: #666;
+            margin-bottom: 32px;
+            color: #767676;
+            font-size: 14px;
+            line-height: 1.5;
         }
 
         .hidden {
@@ -535,7 +596,7 @@
     <!-- OAuth Screen -->
     <div id="oauthScreen" class="hidden">
         <div class="header">
-            <h1>🤖 Box Agent Chat</h1>
+            <h1>🪄 Box Agent Chat</h1>
             <div></div>
         </div>
         <div class="oauth-container">
@@ -548,7 +609,7 @@
     <!-- Main Chat Application -->
     <div id="chatApp" class="hidden">
         <div class="header">
-            <h1>🤖 Box Agent Chat</h1>
+            <h1>🪄 Box Agent Chat</h1>
             <div class="header-center">
                 <div class="agent-selector">
                     <label for="agentSelect">AI Agent:</label>
@@ -915,7 +976,7 @@
             const agentSelect = document.getElementById('agentSelect');
             const agentOption = Array.from(agentSelect.options).find(option => option.value === agentId);
             const agentName = agentOption ? agentOption.text : `Agent ${agentId}`;
-            return `🔄 Switch to: ${agentName}`;
+            return `<span class="agent-switch-icon">🔄</span> <span class="agent-switch-text">Switching to: <strong>${agentName}</strong></span>`;
         }
 
         function formatMarkdown(text) {
@@ -1150,7 +1211,7 @@
             const formattedContent = isUser ? content.replace(/\n/g, '<br>') : formatMarkdown(content);
             
             messageDiv.innerHTML = `
-                <div class="message-avatar">${isUser ? '👤' : '🤖'}</div>
+                <div class="message-avatar">${isUser ? '👤' : '🪄'}</div>
                 <div class="message-content">
                     <div class="message-text">${formattedContent}</div>
                     ${actionsHtml}

@@ -265,11 +265,142 @@
             margin-top: 2px;
         }
 
-        .char-counter.warning {
+                .char-counter.warning {
             color: #ff6b35;
             font-weight: bold;
         }
-        
+
+        /* Markdown formatting styles */
+        .message-text h1 {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 15px 0 10px 0;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        .message-text h2 {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 12px 0 8px 0;
+            color: #444;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 3px;
+        }
+
+        .message-text h3 {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin: 10px 0 6px 0;
+            color: #555;
+        }
+
+        .message-text strong {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .message-text em {
+            font-style: italic;
+            color: #34495e;
+        }
+
+        .message-text code {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 2px 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #c7254e;
+        }
+
+        .message-text pre {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .message-text pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            color: #333;
+        }
+
+        .message-text ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .message-text ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .message-text li {
+            margin: 3px 0;
+            line-height: 1.4;
+        }
+
+        .ai-table {
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.9em;
+            min-width: 400px;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .ai-table thead th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 2px solid #2980b9;
+        }
+
+        .ai-table tbody td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #ddd;
+            background-color: #fff;
+        }
+
+        .ai-table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .ai-table tbody tr:hover {
+            background-color: #e8f4f8;
+        }
+
+        .message-text blockquote {
+            border-left: 4px solid #3498db;
+            margin: 10px 0;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            font-style: italic;
+            color: #666;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .message-text hr {
+            border: none;
+            height: 2px;
+            background: linear-gradient(to right, #ddd, #ccc, #ddd);
+            margin: 20px 0;
+            border-radius: 1px;
+        }
+         
         .results-panel {
             background: #d1ecf1;
             border: 1px solid #bee5eb;
@@ -778,6 +909,135 @@
             return `🔄 Switch to: ${agentName}`;
         }
 
+        function formatMarkdown(text) {
+            let formatted = text;
+            
+            // Handle tables first (before other formatting)
+            formatted = formatTables(formatted);
+            
+            // Headers (must come before bold formatting)
+            formatted = formatted.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+            formatted = formatted.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+            formatted = formatted.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+            
+            // Bold text (**text** or __text__)
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            formatted = formatted.replace(/__(.*?)__/g, '<strong>$1</strong>');
+            
+            // Italic text (*text* or _text_)
+            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            formatted = formatted.replace(/_(.*?)_/g, '<em>$1</em>');
+            
+            // Code blocks (```code```)
+            formatted = formatted.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+            
+            // Inline code (`code`)
+            formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
+            
+            // Blockquotes (> text)
+            formatted = formatted.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+            
+            // Horizontal rules (---, ***, or ___)
+            formatted = formatted.replace(/^[-*_]{3,}$/gm, '<hr>');
+            
+            // Unordered lists (convert bullet points to list items)
+            formatted = formatted.replace(/^[\s]*[-*+] (.+)$/gm, '<!LIST_ITEM!>$1<!END_LIST_ITEM!>');
+            
+            // Ordered lists (convert numbered items to list items)  
+            formatted = formatted.replace(/^[\s]*\d+\. (.+)$/gm, '<!ORDERED_ITEM!>$1<!END_ORDERED_ITEM!>');
+            
+            // Wrap consecutive list items in ul/ol tags
+            formatted = formatted.replace(/(<!LIST_ITEM!>.*?<!END_LIST_ITEM!>\s*)+/g, function(match) {
+                const items = match.replace(/<!LIST_ITEM!>(.*?)<!END_LIST_ITEM!>/g, '<li>$1</li>');
+                return `<ul>${items}</ul>`;
+            });
+            
+            formatted = formatted.replace(/(<!ORDERED_ITEM!>.*?<!END_ORDERED_ITEM!>\s*)+/g, function(match) {
+                const items = match.replace(/<!ORDERED_ITEM!>(.*?)<!END_ORDERED_ITEM!>/g, '<li>$1</li>');
+                return `<ol>${items}</ol>`;
+            });
+            
+            // Line breaks
+            formatted = formatted.replace(/\n/g, '<br>');
+            
+            // Clean up multiple consecutive <br> tags
+            formatted = formatted.replace(/(<br>\s*){3,}/g, '<br><br>');
+            
+            return formatted;
+        }
+
+        function formatTables(text) {
+            // Simple table detection and formatting
+            const lines = text.split('\n');
+            let inTable = false;
+            let tableRows = [];
+            let result = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                // Check if line looks like a table row (contains | characters)
+                if (line.includes('|') && line.split('|').length >= 3) {
+                    if (!inTable) {
+                        inTable = true;
+                        tableRows = [];
+                    }
+                    
+                    // Skip separator rows (|---|---|)
+                    if (!line.match(/^[\s\|:\-]+$/)) {
+                        const cells = line.split('|').map(cell => cell.trim()).filter(cell => cell !== '');
+                        tableRows.push(cells);
+                    }
+                } else {
+                    // End of table
+                    if (inTable && tableRows.length > 0) {
+                        result.push(formatTableHTML(tableRows));
+                        tableRows = [];
+                        inTable = false;
+                    }
+                    result.push(line);
+                }
+            }
+            
+            // Handle table at end of text
+            if (inTable && tableRows.length > 0) {
+                result.push(formatTableHTML(tableRows));
+            }
+            
+            return result.join('\n');
+        }
+
+        function formatTableHTML(rows) {
+            if (rows.length === 0) return '';
+            
+            let html = '<table class="ai-table">';
+            
+            // First row is header
+            if (rows.length > 0) {
+                html += '<thead><tr>';
+                for (const cell of rows[0]) {
+                    html += `<th>${cell}</th>`;
+                }
+                html += '</tr></thead>';
+            }
+            
+            // Remaining rows are data
+            if (rows.length > 1) {
+                html += '<tbody>';
+                for (let i = 1; i < rows.length; i++) {
+                    html += '<tr>';
+                    for (const cell of rows[i]) {
+                        html += `<td>${cell}</td>`;
+                    }
+                    html += '</tr>';
+                }
+                html += '</tbody>';
+            }
+            
+            html += '</table>';
+            return html;
+        }
+
         function addMessage(content, isUser = false, messageData = null) {
             const messagesContainer = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
@@ -820,8 +1080,8 @@
                 `;
             }
             
-            // Format content to preserve line breaks
-            const formattedContent = content.replace(/\n/g, '<br>');
+            // Format content with markdown support (for agent messages only)
+            const formattedContent = isUser ? content.replace(/\n/g, '<br>') : formatMarkdown(content);
             
             messageDiv.innerHTML = `
                 <div class="message-avatar">${isUser ? '👤' : '🤖'}</div>
@@ -1292,6 +1552,92 @@
             return results;
         }
 
+        function buildActionContext(results) {
+            const context = {
+                summary: "",
+                detailedResults: "",
+                createdObjects: [],
+                actionResponses: []
+            };
+            
+            const successful = results.filter(r => r.api_response && !r.api_response.error);
+            const failed = results.filter(r => !r.api_response || r.api_response.error);
+            
+            // Build summary for agent
+            let summaryParts = [];
+            if (successful.length > 0) {
+                summaryParts.push(`Successfully completed ${successful.length} actions:`);
+                for (const action of successful) {
+                    summaryParts.push(`- ${action.resource}: ${action.action}`);
+                }
+            }
+            
+            if (failed.length > 0) {
+                summaryParts.push(`Failed ${failed.length} actions:`);
+                for (const action of failed) {
+                    const error = action.api_response?.error || 'Unknown error';
+                    summaryParts.push(`- ${action.resource}: ${action.action} - ${error}`);
+                }
+            }
+            
+            context.summary = summaryParts.join('\n');
+            
+            // Build detailed results for agent context
+            let detailParts = [];
+            for (const result of results) {
+                if (result.api_response && !result.api_response.error) {
+                    const response = result.api_response;
+                    
+                    detailParts.push(`\nAction: ${result.resource} ${result.action}`);
+                    
+                    // Extract key information based on action type
+                    if (result.resource === 'folders' && result.action === 'create') {
+                        detailParts.push(`  Created folder: "${response.name}" (ID: ${response.id})`);
+                        detailParts.push(`  Parent folder ID: ${response.parent?.id || 'N/A'}`);
+                        context.createdObjects.push({
+                            type: 'folder',
+                            id: response.id,
+                            name: response.name,
+                            parent_id: response.parent?.id
+                        });
+                    } else if (result.resource === 'files') {
+                        detailParts.push(`  File: "${response.name}" (ID: ${response.id})`);
+                        detailParts.push(`  Size: ${response.size || 'N/A'} bytes`);
+                        context.createdObjects.push({
+                            type: 'file',
+                            id: response.id,
+                            name: response.name,
+                            size: response.size
+                        });
+                    } else if (result.resource === 'collaborations') {
+                        detailParts.push(`  Collaboration created with: ${response.accessible_by?.name || 'N/A'}`);
+                        detailParts.push(`  Role: ${response.role || 'N/A'}`);
+                        detailParts.push(`  Status: ${response.status || 'N/A'}`);
+                        context.createdObjects.push({
+                            type: 'collaboration',
+                            id: response.id,
+                            role: response.role,
+                            user: response.accessible_by?.name
+                        });
+                    } else if (result.resource === 'ai' && result.action === 'ask') {
+                        detailParts.push(`  AI Ask Response: ${response.answer}`);
+                        context.actionResponses.push({
+                            type: 'ai_ask',
+                            query: result.body?.prompt || 'N/A',
+                            answer: response.answer
+                        });
+                    } else {
+                        // Generic response handling
+                        detailParts.push(`  Response: ${JSON.stringify(response, null, 2)}`);
+                    }
+                }
+            }
+            
+            context.detailedResults = detailParts.join('\n');
+            
+            return context;
+        }
+
         async function executeActions(actions) {
             try {
                 // Show execution in progress
@@ -1336,6 +1682,16 @@
                 // Show results
                 addMessage("Actions executed!", false, { results: results });
                 
+                // Prepare detailed action context for the agent (hidden from user)
+                const actionContext = buildActionContext(results);
+                
+                // Add action results to conversation history for agent context
+                conversationHistory.push({
+                    prompt: "SYSTEM: Action execution results (for agent context only)",
+                    answer: JSON.stringify(actionContext),
+                    created_at: new Date().toISOString()
+                });
+                
                 // Get agent response to the action results
                 try {
                     if (selectedAgentId) {
@@ -1344,6 +1700,8 @@
                         // Find a valid file ID for the AI request
                         const fileId = await findValidFileId();
                         if (fileId) {
+                            const contextPrompt = `The following actions have been executed with detailed results:\n\n${actionContext.summary}\n\nDetailed Results:\n${actionContext.detailedResults}\n\nPlease provide a response based on these results.`;
+                            
                             const response = await fetch("https://api.box.com/2.0/ai/text_gen", {
                                 method: 'POST',
                                 headers: {
@@ -1351,9 +1709,9 @@
                                     'Authorization': `Bearer ${accessToken}`
                                 },
                                 body: JSON.stringify({
-                                    prompt: `The following actions have been executed:\n\n${actionSummary}\n\nPlease provide a brief summary of what was accomplished.`,
+                                    prompt: contextPrompt,
                                     items: [{"type": "file", "id": fileId}],
-                                    dialogue_history: [],
+                                    dialogue_history: conversationHistory,
                                     ai_agent: {"type": "ai_agent_id", "id": selectedAgentId}
                                 })
                             });
@@ -1362,15 +1720,9 @@
                                 const data = await response.json();
                                 addMessage(data.answer, false);
                                 
-                                // Update conversation history with action results and agent response
+                                // Update conversation history with agent response
                                 conversationHistory.push({
-                                    prompt: "Actions executed",
-                                    answer: JSON.stringify(results),
-                                    created_at: new Date().toISOString()
-                                });
-                                
-                                conversationHistory.push({
-                                    prompt: "Action execution summary",
+                                    prompt: "Agent response to action results",
                                     answer: data.answer,
                                     created_at: data.created_at || new Date().toISOString()
                                 });

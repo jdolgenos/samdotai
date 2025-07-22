@@ -919,7 +919,41 @@
         }
 
         function formatMarkdown(text) {
-            let formatted = text;
+            // First, extract and preserve action blocks to prevent formatting interference
+            const actionBlocks = [];
+            let actionIndex = 0;
+            
+            // Replace action blocks with placeholders
+            let textWithPlaceholders = text.replace(/<action>(.*?)<\/action>/gs, function(match) {
+                const placeholder = `__ACTION_BLOCK_${actionIndex}__`;
+                actionBlocks[actionIndex] = match;
+                actionIndex++;
+                return placeholder;
+            });
+            
+            // Also preserve agent switch blocks
+            const agentBlocks = [];
+            let agentIndex = 0;
+            
+            textWithPlaceholders = textWithPlaceholders.replace(/<agent>(.*?)<\/agent>/gs, function(match) {
+                const placeholder = `__AGENT_BLOCK_${agentIndex}__`;
+                agentBlocks[agentIndex] = match;
+                agentIndex++;
+                return placeholder;
+            });
+            
+            // Preserve double bracket tags like [[s|0]]
+            const bracketBlocks = [];
+            let bracketIndex = 0;
+            
+            textWithPlaceholders = textWithPlaceholders.replace(/\[\[.*?\]\]/g, function(match) {
+                const placeholder = `__BRACKET_BLOCK_${bracketIndex}__`;
+                bracketBlocks[bracketIndex] = match;
+                bracketIndex++;
+                return placeholder;
+            });
+            
+            let formatted = textWithPlaceholders;
             
             // Handle tables first (before other formatting)
             formatted = formatTables(formatted);
@@ -929,13 +963,13 @@
             formatted = formatted.replace(/^## (.*$)/gm, '<h2>$1</h2>');
             formatted = formatted.replace(/^# (.*$)/gm, '<h1>$1</h1>');
             
-            // Bold text (**text** or __text__)
-            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            formatted = formatted.replace(/__(.*?)__/g, '<strong>$1</strong>');
+            // Bold text (**text** or __text__) - but avoid our placeholders
+            formatted = formatted.replace(/\*\*((?!_ACTION_BLOCK_|_AGENT_BLOCK_|_BRACKET_BLOCK_).*?)\*\*/g, '<strong>$1</strong>');
+            formatted = formatted.replace(/__((?!_ACTION_BLOCK_|_AGENT_BLOCK_|_BRACKET_BLOCK_).*?)__/g, '<strong>$1</strong>');
             
-            // Italic text (*text* or _text_)
-            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
-            formatted = formatted.replace(/_(.*?)_/g, '<em>$1</em>');
+            // Italic text (*text* or _text_) - but avoid our placeholders
+            formatted = formatted.replace(/\*((?!_ACTION_BLOCK_|_AGENT_BLOCK_|_BRACKET_BLOCK_)[^*]*?)\*/g, '<em>$1</em>');
+            formatted = formatted.replace(/_((?!_ACTION_BLOCK_|_AGENT_BLOCK_|_BRACKET_BLOCK_)[^_]*?)_/g, '<em>$1</em>');
             
             // Code blocks (```code```)
             formatted = formatted.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
@@ -972,11 +1006,26 @@
             // Clean up multiple consecutive <br> tags
             formatted = formatted.replace(/(<br>\s*){3,}/g, '<br><br>');
             
+            // Restore action blocks in their original form
+            for (let i = 0; i < actionBlocks.length; i++) {
+                formatted = formatted.replace(`__ACTION_BLOCK_${i}__`, actionBlocks[i]);
+            }
+            
+            // Restore agent blocks in their original form
+            for (let i = 0; i < agentBlocks.length; i++) {
+                formatted = formatted.replace(`__AGENT_BLOCK_${i}__`, agentBlocks[i]);
+            }
+            
+            // Restore bracket blocks in their original form
+            for (let i = 0; i < bracketBlocks.length; i++) {
+                formatted = formatted.replace(`__BRACKET_BLOCK_${i}__`, bracketBlocks[i]);
+            }
+            
             return formatted;
         }
 
         function formatTables(text) {
-            // Simple table detection and formatting
+            // More specific table detection that avoids double bracket tags
             const lines = text.split('\n');
             let inTable = false;
             let tableRows = [];
@@ -986,7 +1035,15 @@
                 const line = lines[i].trim();
                 
                 // Check if line looks like a table row (contains | characters)
-                if (line.includes('|') && line.split('|').length >= 3) {
+                // BUT avoid lines with double brackets [[...]] which contain pipes
+                const hasDoubleBreaketsWithPipe = /\[\[.*?\|.*?\]\]/.test(line);
+                const looksLikeTable = line.includes('|') && 
+                                     line.split('|').length >= 3 && 
+                                     !hasDoubleBreaketsWithPipe &&
+                                     !line.includes('[[') && // Additional safety
+                                     !line.includes(']]');   // Additional safety
+                
+                if (looksLikeTable) {
                     if (!inTable) {
                         inTable = true;
                         tableRows = [];
@@ -1404,7 +1461,8 @@
             if (!actionBlocks) return [];
 
             const actions = [];
-            for (const block of actionBlocks) {
+            for (let i = 0; i < actionBlocks.length; i++) {
+                const block = actionBlocks[i];
                 try {
                     const jsonStr = block.replace(/<\/?action>/g, '').trim();
                     const parsed = JSON.parse(jsonStr);
@@ -1414,7 +1472,11 @@
                         actions.push(parsed);
                     }
                 } catch (e) {
-                    console.error('Failed to parse action block:', e);
+                    console.error(`Failed to parse action block ${i + 1}:`, e);
+                    console.error('JSON content:', block);
+                    
+                    // Show user-friendly error message
+                    addMessage(`⚠️ Action ${i + 1} has invalid JSON format: ${e.message}. Please check for missing quotes around property names.`, false);
                     continue;
                 }
             }

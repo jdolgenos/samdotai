@@ -245,6 +245,30 @@
             color: #f57c00;
             font-size: 12px;
         }
+
+        .message-text {
+            line-height: 1.5;
+            margin-bottom: 5px;
+        }
+
+        .chat-input {
+            resize: none;
+            overflow: hidden;
+            min-height: 40px;
+            max-height: 120px;
+        }
+
+        .char-counter {
+            font-size: 12px;
+            color: #666;
+            text-align: right;
+            margin-top: 2px;
+        }
+
+        .char-counter.warning {
+            color: #ff6b35;
+            font-weight: bold;
+        }
         
         .results-panel {
             background: #d1ecf1;
@@ -428,7 +452,8 @@
             </div>
             
             <div class="chat-input-container">
-                <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..." autocomplete="off">
+                <textarea class="chat-input" id="chatInput" placeholder="Type your message..." autocomplete="off" rows="1" maxlength="500"></textarea>
+                <div class="char-counter" id="charCounter">0/500</div>
                 <button class="send-btn" id="sendBtn">Send</button>
             </div>
         </div>
@@ -795,10 +820,13 @@
                 `;
             }
             
+            // Format content to preserve line breaks
+            const formattedContent = content.replace(/\n/g, '<br>');
+            
             messageDiv.innerHTML = `
                 <div class="message-avatar">${isUser ? '👤' : '🤖'}</div>
                 <div class="message-content">
-                    ${content}
+                    <div class="message-text">${formattedContent}</div>
                     ${actionsHtml}
                     ${agentSwitchHtml}
                     ${resultsHtml}
@@ -990,6 +1018,12 @@
                 method: "PUT",
                 path: "/2.0/files/{file_id}/metadata/{scope}/{template_key}",
                 contentType: "application/json-patch+json"
+            },
+            "ai,ask": {
+                method: "POST",
+                path: "/2.0/ai/ask",
+                contentType: "application/json",
+                isSpecial: true
             }
         };
 
@@ -1003,6 +1037,11 @@
             const accessToken = token || await getValidAccessToken();
             if (!accessToken) {
                 throw new Error("No valid access token available");
+            }
+
+            // Special handling for AI Ask requests
+            if (opKey === "ai,ask") {
+                return await handleAskRequest(body, accessToken);
             }
 
             // Replace path variables
@@ -1034,6 +1073,61 @@
             }
 
             return response.status !== 204 ? await response.json() : {};
+        }
+
+        async function handleAskRequest(actionBody, token) {
+            const { prompt, file_id_list = [], hub = '', agent_id = selectedAgentId } = actionBody;
+            
+            let items = [];
+            let mode = 'single_item_qa';
+            
+            if (hub && hub !== '') {
+                items.push({
+                    type: 'hubs',
+                    id: hub,
+                    content: ''
+                });
+                mode = 'single_item_qa';
+            } else {
+                for (const fileId of file_id_list) {
+                    items.push({
+                        type: 'file',
+                        id: fileId,
+                        content: ''
+                    });
+                }
+                
+                if (file_id_list.length > 1) {
+                    mode = 'multiple_item_qa';
+                }
+            }
+
+            const requestBody = {
+                prompt: prompt,
+                items: items,
+                mode: mode,
+                ai_agent: {
+                    type: "ai_agent_id",
+                    id: agent_id || selectedAgentId
+                }
+            };
+
+            const response = await fetch("https://api.box.com/2.0/ai/ask", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`POST /2.0/ai/ask -> ${response.status}: ${errorText}`);
+            }
+
+            const result = await response.json();
+            return { answer: result.answer };
         }
 
         function actionsFromText(text) {
@@ -1347,8 +1441,37 @@
             document.getElementById('loginBtn').addEventListener('click', initiateOAuth);
             document.getElementById('logoutBtn').addEventListener('click', logout);
             document.getElementById('sendBtn').addEventListener('click', sendMessage);
-            document.getElementById('chatInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
+            
+            const chatInput = document.getElementById('chatInput');
+            const charCounter = document.getElementById('charCounter');
+            
+            // Auto-resize textarea and character counter
+            function updateInput() {
+                const value = chatInput.value;
+                const length = value.length;
+                
+                // Update character counter
+                charCounter.textContent = `${length}/500`;
+                if (length >= 450) {
+                    charCounter.classList.add('warning');
+                } else {
+                    charCounter.classList.remove('warning');
+                }
+                
+                // Auto-resize textarea
+                chatInput.style.height = 'auto';
+                chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+                
+                // Show limit warning
+                if (length >= 500) {
+                    charCounter.textContent = '500/500 - Prompt limit reached';
+                }
+            }
+            
+            chatInput.addEventListener('input', updateInput);
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
                     sendMessage();
                 }
             });

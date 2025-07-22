@@ -765,9 +765,12 @@
             return null; // Return null since user will be redirected
         }
 
-        async function findValidFileId(folderId = "0", visited = new Set(), maxDepth = 5, currentDepth = 0) {
+        async function findValidFileId(token = null, folderId = "0", visited = new Set(), maxDepth = 5, currentDepth = 0) {
             // Return cached file ID if available
-            if (cachedFileId) return cachedFileId;
+            if (cachedFileId) {
+                console.log(`Using cached file ID: ${cachedFileId}`);
+                return cachedFileId;
+            }
             
             // Prevent infinite recursion and going too deep
             if (currentDepth >= maxDepth || visited.has(folderId)) {
@@ -777,18 +780,24 @@
             visited.add(folderId);
             
             try {
-                const token = await getValidAccessToken();
-                if (!token) return null;
+                // Only get token if not provided
+                const accessToken = token || await getValidAccessToken();
+                if (!accessToken) return null;
 
+                console.log(`Searching for files in folder ${folderId} (depth: ${currentDepth})`);
                 const response = await fetch(`https://api.box.com/2.0/folders/${folderId}/items`, {
                     method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${accessToken}`
                     }
                 });
 
                 if (!response.ok) {
                     console.error(`Failed to get folder items: ${response.status}`);
+                    // Clear cache on auth errors to force re-authentication
+                    if (response.status === 401) {
+                        cachedFileId = null;
+                    }
                     return null;
                 }
 
@@ -799,7 +808,7 @@
                 for (const item of entries) {
                     if (item.type === 'file') {
                         cachedFileId = item.id;
-                        console.log(`Found valid file ID: ${item.id} (${item.name})`);
+                        console.log(`Found and cached file ID: ${item.id} (${item.name})`);
                         return item.id;
                     }
                 }
@@ -807,7 +816,7 @@
                 // If no files found, recursively search folders
                 for (const item of entries) {
                     if (item.type === 'folder') {
-                        const fileId = await findValidFileId(item.id, visited, maxDepth, currentDepth + 1);
+                        const fileId = await findValidFileId(accessToken, item.id, visited, maxDepth, currentDepth + 1);
                         if (fileId) return fileId;
                     }
                 }
@@ -1134,7 +1143,7 @@
                 }
                 
                 // Find a valid file ID for the AI request
-                const fileId = await findValidFileId();
+                const fileId = await findValidFileId(accessToken);
                 if (!fileId) {
                     addMessage('No accessible files found in your Box account. Please add some files first.', false);
                     return;
@@ -1422,6 +1431,8 @@
 
         async function switchToAgent(newAgentId, handoffMessage) {
             try {
+                console.log(`Starting agent switch to ${newAgentId}`);
+                
                 // Find the agent in our loaded agents list
                 const agentSelect = document.getElementById('agentSelect');
                 const agentOption = Array.from(agentSelect.options).find(option => option.value === newAgentId);
@@ -1438,17 +1449,21 @@
                 
                 // Show handoff message
                 addMessage(`🔄 Switching to ${agentOption.text}...`, false);
+                console.log(`Updated selectedAgentId to: ${selectedAgentId}`);
                 
                 // Send the handoff message to the new agent with conversation history
+                console.log('Getting access token for agent switch...');
                 const accessToken = await getValidAccessToken();
                 if (!accessToken) {
+                    console.error('Failed to get access token during agent switch');
                     addMessage('Authentication required. Please log in again.', false);
                     showOAuthScreen();
                     return;
                 }
+                console.log('Access token obtained successfully for agent switch');
 
                 // Find a valid file ID for the AI request
-                const fileId = await findValidFileId();
+                const fileId = await findValidFileId(accessToken);
                 if (!fileId) {
                     addMessage('No accessible files found in your Box account. Please add some files first.', false);
                     return;
@@ -1698,7 +1713,7 @@
                         const accessToken = await getValidAccessToken();
                         
                         // Find a valid file ID for the AI request
-                        const fileId = await findValidFileId();
+                        const fileId = await findValidFileId(accessToken);
                         if (fileId) {
                             const contextPrompt = `The following actions have been executed with detailed results:\n\n${actionContext.summary}\n\nDetailed Results:\n${actionContext.detailedResults}\n\nPlease provide a response based on these results.`;
                             
@@ -1756,6 +1771,7 @@
             conversationHistory = [];
             availableAgents = [];
             selectedAgentId = null;
+            cachedFileId = null; // Clear cached file ID on logout
             showOAuthScreen();
         }
 
